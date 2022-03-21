@@ -104,17 +104,20 @@ def fd_cli_cmd_nft_recover(
 
     db_bc_cursor: sqlite3.Cursor = ctx.obj['bc_db'].cursor()
     db_bc_cursor.execute(
-        f"SELECT * "
+        f"SELECT coin_parent, amount "
         f"FROM coin_record "
-        f"WHERE spent == 0 "
+        f"WHERE spent_index == 0 "
         f"AND timestamp <= (strftime('%s', 'now') - {delay}) "
         f"AND puzzle_hash LIKE '{contract_hash_hex}' "
         f"ORDER BY timestamp DESC")
 
+    idx_amount = 1
+    idx_coin_parent = 0
+
     coin_records: list = []
 
     for coin in db_bc_cursor.fetchall():
-        coin_amount: int = int.from_bytes(coin[7], byteorder='big', signed=False)
+        coin_amount: int = int.from_bytes(coin[idx_amount], byteorder='big', signed=False)
 
         if coin_amount > 0:
             coin_records.append(coin)
@@ -130,8 +133,8 @@ def fd_cli_cmd_nft_recover(
     coin_solutions: list[dict] = []
 
     for coin in coin_records:
-        coin_parent: str = coin[6]
-        coin_amount: int = int.from_bytes(coin[7], byteorder='big', signed=False)
+        coin_parent: bytes32 = bytes32(coin[idx_coin_parent])
+        coin_amount: int = int.from_bytes(coin[idx_amount], byteorder='big', signed=False)
 
         coin_solution_hex: str = bytes(SerializedProgram.from_program(
             Program.to([uint64(coin_amount), 0])
@@ -140,7 +143,7 @@ def fd_cli_cmd_nft_recover(
         coin_solutions.append({
             'coin': {
                 'amount': coin_amount,
-                'parent_coin_info': coin_parent,
+                'parent_coin_info': coin_parent.hex(),
                 'puzzle_hash': contract_hash_hex
             },
             'puzzle_reveal': program_puzzle_hex,
