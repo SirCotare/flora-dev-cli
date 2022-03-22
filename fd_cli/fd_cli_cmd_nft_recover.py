@@ -128,12 +128,18 @@ def fd_cli_cmd_nft_recover(
         return
     else:
         fd_cli_print_raw('Coins eligible for recovery:', pre=pre)
-        fd_cli_print_coin_lite_many(coin_records, pre=pre + 1)
+        # fd_cli_print_coin_lite_many(coin_records, pre=pre + 1)
+        fd_cli_print_raw(str(len(coin_records))+' entries.', pre=pre + 1)
 
     coin_solutions: list[dict] = []
 
     for coin in coin_records:
-        coin_parent: bytes32 = bytes32(coin[idx_coin_parent])
+        if isinstance(coin[idx_coin_parent], str):
+            coin_parent_hex: str = coin[idx_coin_parent]
+        else:
+            coin_parent: bytes32 = bytes32(coin[idx_coin_parent])
+            coin_parent_hex: str = coin_parent.hex()
+
         coin_amount: int = int.from_bytes(coin[idx_amount], byteorder='big', signed=False)
 
         coin_solution_hex: str = bytes(SerializedProgram.from_program(
@@ -143,7 +149,7 @@ def fd_cli_cmd_nft_recover(
         coin_solutions.append({
             'coin': {
                 'amount': coin_amount,
-                'parent_coin_info': coin_parent.hex(),
+                'parent_coin_info': coin_parent_hex,
                 'puzzle_hash': contract_hash_hex
             },
             'puzzle_reveal': program_puzzle_hex,
