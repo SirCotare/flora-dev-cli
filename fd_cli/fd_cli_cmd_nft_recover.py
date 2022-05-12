@@ -108,8 +108,8 @@ def fd_cli_cmd_nft_recover(
         f"FROM coin_record "
         f"WHERE spent_index == 0 "
         f"AND timestamp <= (strftime('%s', 'now') - {delay}) "
-        f"AND puzzle_hash LIKE '{contract_hash_hex}' "
-        f"ORDER BY timestamp DESC")
+        f"AND puzzle_hash=? "
+        f"ORDER BY timestamp DESC", (contract_hash_b32))
 
     idx_amount = 1
     idx_coin_parent = 0
@@ -123,7 +123,7 @@ def fd_cli_cmd_nft_recover(
             coin_records.append(coin)
 
     if len(coin_records) == 0:
-        fd_cli_print_raw(f'No coins are eligible for recovery yet. '
+        fd_cli_print_raw(f'No coins are eligible for recovery yet for '+contract_hash_hex+'. '
                          f'Notice that 604800 seconds must pass since coin creation to recover it.', pre=pre)
         return
     else:
